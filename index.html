@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ParadoxGPT</title>
+    <style>
+        :root {
+            --primary: #ffffff;
+            --secondary: #f8f9fa;
+            --accent: #4a90e2;
+            --text: #2d3436;
+            --border: #e0e0e0;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', 'Noto Sans Bengali', sans-serif;
+            background: var(--primary);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            padding: 12px 20px;
+            background: var(--secondary);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-bottom: 1px solid var(--border);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+
+        .chat-header img {
+            height: 36px;
+            border-radius: 4px;
+        }
+
+        .chat-header h1 {
+            font-size: 1.1rem;
+            margin: 0;
+            color: var(--accent);
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 80px 20px 180px; /* Adjusted padding for footer */
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 15px 20px;
+            border-radius: 12px;
+            animation: fadeIn 0.3s ease;
+            word-break: break-word;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background: var(--accent);
+            color: white;
+            border-radius: 12px 12px 0 12px;
+        }
+
+        .bot-message {
+            background: var(--secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px 12px 12px 0;
+        }
+
+        .input-container {
+            padding: 20px;
+            background: var(--secondary);
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+        }
+
+        input {
+            flex: 1;
+            padding: 16px 24px;
+            border: 1px solid var(--border);
+            border-radius: 25px;
+            font-size: 1rem;
+            font-family: 'Segoe UI', 'Noto Sans Bengali', sans-serif;
+        }
+
+        button {
+            padding: 16px 32px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .footer-credit {
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+            padding: 10px 0 0;
+        }
+
+        .footer-credit a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @font-face {
+            font-family: 'Noto Sans Bengali';
+            src: url('https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali&display=swap');
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhuNO2vCgaGJpX2H_pf4qN2U6uWqYzyM6Qc3gGsOigIdTB6cCXHfXApmm2k_n2TdZ_eEK10AH5DxdPto5UcEMMYPxjOykOZvN2yGWV4fUb8x5FVY9Kuohpzmpqwd4AaHwWmsurPGayTm-2KdUUh1qBfjUs7ykhlDNzMsMd3x48wGezYi0mtarZ13c0turk/s320/InShot_20250220_180628002.jpg" 
+                 alt="ParadoxGPT Logo">
+            <h1>ParadoxGPT</h1>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages"></div>
+        
+        <div class="input-container">
+            <div class="input-row">
+                <input type="text" id="userInput" placeholder="Type your message... (English or বাংলা)">
+                <button id="sendButton">Send</button>
+            </div>
+            <div class="footer-credit">
+                Powered ⚡ by <a href="https://www.khubaybhossain.com" target="_blank">Khubayb Hossain</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class ParadoxGPT {
+            constructor() {
+                this.knowledgeBase = [];
+                this.init();
+            }
+
+            async init() {
+                await this.loadKnowledgeBase();
+                this.setupEventListeners();
+            }
+
+            async loadKnowledgeBase() {
+                try {
+                    const response = await fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vTdmrbzoTKPmqCaEDW419zPxw3Bj2xILDnIs25K3RRR5i2oybRXATPdGXMUw5NsCxmME-Yz1B4tXg7s/pubhtml');
+                    const html = await response.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const rows = Array.from(doc.querySelectorAll('tr')).slice(1);
+                    
+                    this.knowledgeBase = rows.map(row => {
+                        const cells = row.querySelectorAll('td');
+                        return {
+                            question: {
+                                en: cells[0]?.textContent?.trim() || '',
+                                bn: cells[2]?.textContent?.trim() || ''
+                            },
+                            answer: {
+                                en: cells[1]?.textContent?.trim() || '',
+                                bn: cells[3]?.textContent?.trim() || ''
+                            }
+                        };
+                    }).filter(item => item.question.en || item.question.bn);
+                } catch (error) {
+                    console.error('Error loading knowledge base:', error);
+                }
+            }
+
+            detectLanguage(text) {
+                const banglaRegex = /[\u0980-\u09FF]/;
+                return banglaRegex.test(text) ? 'bn' : 'en';
+            }
+
+            async processQuery(query) {
+                const lang = this.detectLanguage(query);
+                const cleanQuery = query.toLowerCase().trim();
+                
+                const exactMatch = this.knowledgeBase.find(item => 
+                    item.question[lang].toLowerCase() === cleanQuery
+                );
+                if (exactMatch) return exactMatch.answer[lang];
+
+                const allMatches = this.knowledgeBase.filter(item => 
+                    Object.values(item.question).some(question => 
+                        question.toLowerCase().includes(cleanQuery))
+                );
+
+                if (allMatches.length > 0) {
+                    const bestMatch = allMatches.reduce((a, b) => 
+                        Math.max(a.question[lang].length, b.question[lang].length) === a.question[lang].length ? a : b
+                    );
+                    return bestMatch.answer[lang] || bestMatch.answer.en;
+                }
+
+                return await this.fallbackSearch(query, lang);
+            }
+
+            async fallbackSearch(query, lang) {
+                try {
+                    const encodedQuery = encodeURIComponent(query);
+                    const [ddgResponse, wikiResponse] = await Promise.all([
+                        fetch(`https://api.duckduckgo.com/?q=${encodedQuery}&format=json&no_html=1`),
+                        fetch(`https://${lang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodedQuery}&format=json&origin=*`)
+                    ]);
+
+                    const [ddgData, wikiData] = await Promise.all([
+                        ddgResponse.json(),
+                        wikiResponse.json()
+                    ]);
+
+                    if (ddgData.AbstractText) return this.cleanText(ddgData.AbstractText);
+                    if (wikiData.query?.search?.[0]?.snippet) {
+                        return this.cleanText(wikiData.query.search[0].snippet);
+                    }
+
+                    return lang === 'bn' ? 
+                        "আমি নির্দিষ্ট উত্তর খুঁজে পাইনি। অনুগ্রহ করে আপনার প্রশ্নটি পুনরায় লিখুন।" : 
+                        "I couldn't find a specific answer. Please rephrase your question.";
+                } catch (error) {
+                    console.error('API Error:', error);
+                    return lang === 'bn' ? 
+                        "একটি ত্রুটি ঘটেছে। অনুগ্রহ করে কিছুক্ষণ পর আবার চেষ্টা করুন।" : 
+                        "An error occurred. Please try again later.";
+                }
+            }
+
+            cleanText(text) {
+                return text.replace(/<\/?[^>]+(>|$)/g, '')
+                          .replace(/\s+/g, ' ')
+                          .trim();
+            }
+
+            setupEventListeners() {
+                const input = document.getElementById('userInput');
+                const sendButton = document.getElementById('sendButton');
+
+                const handleSend = async () => {
+                    const query = input.value.trim();
+                    if (!query) return;
+
+                    input.value = '';
+                    this.addMessage(query, 'user');
+
+                    try {
+                        const response = await this.processQuery(query);
+                        this.addMessage(response, 'bot');
+                    } catch (error) {
+                        console.error('Error:', error);
+                        this.addMessage("An error occurred. Please try again.", 'bot');
+                    }
+                };
+
+                sendButton.addEventListener('click', handleSend);
+                input.addEventListener('keypress', e => e.key === 'Enter' && handleSend());
+            }
+
+            addMessage(content, type) {
+                const messagesDiv = document.getElementById('chatMessages');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${type}-message`;
+                messageDiv.textContent = content;
+                messagesDiv.appendChild(messageDiv);
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+        }
+
+        new ParadoxGPT();
+    </script>
+</body>
+</html>
