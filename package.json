@@ -1,0 +1,12 @@
+{
+  "name": "paradoxgpt",
+  "version": "1.0.0",
+  "description": "AI-powered chatbot with enhanced NLP.",
+  "main": "script.js",
+  "scripts": {
+    "start": "node script.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
