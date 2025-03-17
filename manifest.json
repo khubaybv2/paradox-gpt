@@ -1,0 +1,16 @@
+{
+  "name": "ParadoxGPT",
+  "short_name": "ParadoxGPT",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0078ff",
+  "theme_color": "#0078ff",
+  "description": "An AI chatbot with enhanced NLP capabilities.",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
